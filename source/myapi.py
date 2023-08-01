@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI, Path
 from typing import Optional
 from pydantic import BaseModel
@@ -22,6 +23,12 @@ class Student(BaseModel):
     age: int
     year: str
 
+#Essa classe que permite atualizar um studant (Nem todos os campos precisam ser atualizados)
+class UpdateStudent(BaseModel):
+    name: Optional[str] = None
+    age: Optional[int] = None
+    year: Optional[str] = None
+
 @app.get("/") # Isso é um endpoint
 def index():
     return {"name": "First Data"}
@@ -37,21 +44,30 @@ def get_student(*, name: str = None, test: int):  # A typing permite você expli
             return students[student_id]
     return {"Data": "Not found"}
 
-# O asterisco (*) antes de um parâmetro em uma função no Python indica que
-# esse parâmetro é um parâmetro de palavras-chave (keyword-only argument).
-# Isso significa que esse parâmetro só pode ser fornecido na chamada da função
-# usando a sintaxe de palavra-chave, e não como um argumento posicional.
-# Ex:
-    # func(*, a: int, b: int):
-    #   pass
-
-    # func(a = 1, b = 2) Ok
-    # func(1,2) Erro
-
 @app.post("/create-student/{student_id}")
 def create_student(student_id: int, student: Student):
     if student_id in students.keys():
         return {"Error": "Student already exists"}
-    
     students[student_id] = student
     return students[student_id]
+
+@app.put("/update-student/{student_id}")
+def update_student(student_id: int, student: UpdateStudent):
+    if student_id not in students.keys():
+        return {"Error": "Student does not exist"}
+    if student.name != None:
+        students[student_id]["name"] = student.name
+    if student.age != None:
+        students[student_id]["age"] = student.age
+    if student.year != None:
+        students[student_id]["year"] = student.year
+    return students[student_id]
+
+@app.delete("/delete-student/{student_id}")
+def delete_student(student_id: int):
+    if student_id not in students.keys():
+        return {"Error": "Student does not exist"}
+    del students[student_id]
+    return {"Message": "Student deleted successfully"}
+
+uvicorn.run(app)
